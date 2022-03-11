@@ -1,4 +1,4 @@
-use crate::{CommandHandler, FromInvoke, InvokeArgs, TauriState, TauriWindow};
+use crate::{CommandHandler, FromInvoke, InvokeArgs, TauriState, TauriWindow, TauriStateManager};
 use tauri::{Invoke, Runtime};
 
 #[cfg(not(feature = "codegen"))]
@@ -82,6 +82,12 @@ impl_fn_handler! {
 impl<R: Runtime> FromInvoke<R> for TauriWindow<R> {
     fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Self {
         TauriWindow(invoke.message.window())
+    }
+}
+
+impl<R: Runtime> FromInvoke<R> for TauriStateManager {
+    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Self {
+        TauriStateManager(invoke.message.state())
     }
 }
 

@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, sync::Arc};
 use tauri::{Invoke, InvokeResolver, Runtime};
 
 mod impls;
@@ -10,6 +10,25 @@ pub use anyhow;
 pub use tauri_commands_macros::command;
 
 pub type CommandResult<T> = Result<T, anyhow::Error>;
+
+/// Workaround to access [`Invoke`] Tauri items, as [`FromInvoke`] cannot be implemented
+/// for them due to blanket impls and orphan rules.
+#[repr(transparent)]
+pub struct TauriStateManager(Arc<tauri::StateManager>);
+
+impl TauriStateManager {
+    pub fn into_inner(self) -> Arc<tauri::StateManager> {
+        self.0
+    }
+}
+
+impl std::ops::Deref for TauriStateManager {
+    type Target = tauri::StateManager;
+
+    fn deref(&self) -> &Self::Target {
+        &(*self.0)
+    }
+}
 
 /// Workaround to access [`Invoke`] Tauri items, as [`FromInvoke`] cannot be implemented
 /// for them due to blanket impls and orphan rules.
@@ -56,6 +75,8 @@ where
         &self.0
     }
 }
+
+
 
 pub struct Command<R: Runtime> {
     handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
