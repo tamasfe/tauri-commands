@@ -1,4 +1,4 @@
-use crate::{CommandHandler, FromInvoke, InvokeArgs};
+use crate::{CommandHandler, FromInvoke, InvokeArgs, TauriState, TauriWindow};
 use tauri::{Invoke, Runtime};
 
 #[cfg(not(feature = "codegen"))]
@@ -77,4 +77,16 @@ impl_fn_handler! {
     { _1, _2, _3, _4, _5, _6, _7, _8 }
     { _1, _2, _3, _4, _5, _6, _7, _8, _9 }
     { _1, _2, _3, _4, _5, _6, _7, _8, _9, _10 }
+}
+
+impl<R: Runtime> FromInvoke<R> for TauriWindow<R> {
+    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Self {
+        TauriWindow(invoke.message.window())
+    }
+}
+
+impl<R: Runtime, T: Send + Sync + Clone + 'static> FromInvoke<R> for TauriState<T> {
+    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Self {
+        TauriState((*invoke.message.state().get::<T>()).clone())
+    }
 }

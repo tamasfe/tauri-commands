@@ -11,6 +11,52 @@ pub use tauri_commands_macros::command;
 
 pub type CommandResult<T> = Result<T, anyhow::Error>;
 
+/// Workaround to access [`Invoke`] Tauri items, as [`FromInvoke`] cannot be implemented
+/// for them due to blanket impls and orphan rules.
+#[repr(transparent)]
+pub struct TauriWindow<R: Runtime>(tauri::Window<R>);
+
+impl<R: Runtime> TauriWindow<R> {
+    pub fn into_inner(self) -> tauri::Window<R> {
+        self.0
+    }
+}
+
+impl<R: Runtime> std::ops::Deref for TauriWindow<R> {
+    type Target = tauri::Window<R>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+/// Workaround to access [`Invoke`] Tauri items, as [`FromInvoke`] cannot be implemented
+/// for them due to blanket impls and orphan rules.
+#[repr(transparent)]
+pub struct TauriState<T>(T)
+where
+    T: Send + Sync + Clone + 'static;
+
+impl<T> TauriState<T>
+where
+    T: Send + Sync + Clone + 'static,
+{
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
+impl<T> std::ops::Deref for TauriState<T>
+where
+    T: Send + Sync + Clone + 'static,
+{
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 pub struct Command<R: Runtime> {
     handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
     #[cfg(feature = "codegen")]
