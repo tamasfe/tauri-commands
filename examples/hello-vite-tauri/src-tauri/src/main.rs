@@ -5,8 +5,8 @@
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
-use tauri_commands::{command, CommandResult, Commands};
+use tauri::{Manager, Runtime};
+use tauri_commands::{command, CommandResult, Commands, TauriWindow};
 
 /// The request data.
 #[derive(Deserialize, JsonSchema)]
@@ -22,6 +22,7 @@ struct HelloReply {
     message: String,
 }
 
+/// Send a friendly message and receive a reply.
 #[command]
 async fn hello(request: HelloRequest) -> CommandResult<HelloReply> {
     println!("{}", request.message);
@@ -30,9 +31,20 @@ async fn hello(request: HelloRequest) -> CommandResult<HelloReply> {
     })
 }
 
+/// Commands defined as functions have to be generic over the runtime.
+#[command]
+async fn show_window<R: Runtime>(window: TauriWindow<R>) -> CommandResult<()> {
+    window.show().unwrap();
+    Ok(())
+}
+
 fn main() {
     let mut commands = Commands::new();
-    commands.add_command(hello);
+
+    commands
+        .add_command(hello)
+        .add_command(show_window)
+        .handle("add numbers", |a: i32, b: i32| async move { Ok(a + b) });
 
     if cfg!(debug_assertions) {
         commands

@@ -41,6 +41,10 @@ impl CommandMeta {
         msg_obj.push_str("{");
 
         for (idx, arg) in self.args.iter().enumerate() {
+            if arg.hidden {
+                continue;
+            }
+
             if let Schema::Object(s) = &arg.schema {
                 sw.push_str(&arg.name);
                 sw.push_str(": ");
@@ -77,6 +81,7 @@ impl CommandMeta {
 
 #[derive(Debug)]
 pub struct CommandArg {
+    pub hidden: bool,
     pub name: Cow<'static, str>,
     pub schema: schemars::schema::Schema,
 }
@@ -106,7 +111,7 @@ impl<R: Runtime> Commands<R> {
     }
 
     pub fn write_typescript(&self, path: impl AsRef<Path>) -> Result<(), std::io::Error> {
-        if let Some(parent) = path.as_ref().parent()  {
+        if let Some(parent) = path.as_ref().parent() {
             std::fs::create_dir_all(parent)?;
         }
         std::fs::write(path.as_ref(), self.generate_typescript())

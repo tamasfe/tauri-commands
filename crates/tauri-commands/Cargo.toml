@@ -1,6 +1,6 @@
 [package]
 name = "tauri-commands"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 publish = false
 
@@ -13,7 +13,7 @@ schemars = { version = "0.8.8", optional = true }
 serde = "1.0.136"
 serde_json = "1.0.79"
 tauri = { version = "1.0.0-rc.4" }
-tauri-commands-macros = { version = "0.1.0", path = "../tauri-commands-macros" }
+tauri-commands-macros = { version = "=0.1.1", path = "../tauri-commands-macros" }
 yasc = { version = "0.1.0", path = "../yasc", optional = true }
 
 [features]

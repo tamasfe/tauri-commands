@@ -24,8 +24,9 @@ macro_rules! impl_invoke_args {
                 #[allow(unused_variables, clippy::unused_unit)]
                 fn args(gen: &mut schemars::gen::SchemaGenerator) -> Vec<crate::codegen::CommandArg> {
                     [$(
-                        $arg::schema(gen).map(|schema| crate::codegen::CommandArg {name: std::borrow::Cow::Borrowed(stringify!($arg)), schema}),
-                    )*].into_iter().filter_map(|c| c).collect()
+                        $arg::schema(gen).map(|schema| crate::codegen::CommandArg {hidden: false, name: std::borrow::Cow::Borrowed(stringify!($arg)), schema})
+                        .unwrap_or_else(|| crate::codegen::CommandArg {hidden: true, name: std::borrow::Cow::Borrowed(stringify!($arg)), schema: schemars::schema::Schema::Bool(false)}),
+                    )*].into_iter().collect()
                 }
             }
         )*

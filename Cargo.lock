@@ -3273,7 +3273,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-commands"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "heck 0.4.0",
@@ -3287,7 +3287,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-commands-macros"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "heck 0.4.0",
  "proc-macro2",
