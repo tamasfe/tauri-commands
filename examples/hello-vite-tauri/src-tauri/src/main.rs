@@ -31,7 +31,8 @@ async fn hello(request: HelloRequest) -> CommandResult<HelloReply> {
 }
 
 fn main() {
-    let commands = Commands::new().add_command(hello);
+    let mut commands = Commands::new();
+    commands.add_command(hello);
 
     if cfg!(debug_assertions) {
         commands

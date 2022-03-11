@@ -123,8 +123,8 @@ impl<R: Runtime> Commands<R> {
         }
     }
 
-    pub fn add_command(mut self, command: impl IntoCommand) -> Self {
-        let (name, cmd) = command.into_command(&mut self);
+    pub fn add_command(&mut self, command: impl IntoCommand) -> &mut Self {
+        let (name, cmd) = command.into_command(self);
         if self.commands.contains_key(&name) {
             panic!("command handler for command `{name}` already exists");
         }
@@ -132,7 +132,7 @@ impl<R: Runtime> Commands<R> {
         self
     }
 
-    pub fn handle<Args, F>(mut self, command_name: &str, handler: F) -> Self
+    pub fn handle<Args, F>(&mut self, command_name: &str, handler: F) -> &mut Self
     where
         Args: InvokeArgs<R>,
         F: CommandHandler<Args> + Send + Sync + 'static,
