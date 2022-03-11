@@ -41,10 +41,11 @@ async fn show_window<R: Runtime>(window: TauriWindow<R>) -> CommandResult<()> {
 fn main() {
     let mut commands = Commands::new();
 
-    commands
-        .add_command(hello)
-        .add_command(show_window)
-        .handle("add numbers", |a: i32, b: i32| async move { Ok(a + b) });
+    commands.command(hello).command(show_window).handler(
+        "add numbers",
+        "adds numbers",
+        |a: i32, b: i32| async move { Ok(a + b) },
+    );
 
     if cfg!(debug_assertions) {
         commands

@@ -8,8 +8,9 @@ where
     R: Runtime,
     T: DeserializeOwned,
 {
-    fn from_invoke(arg_name: &str, invoke: &Invoke<R>) -> Self {
-        serde_json::from_value(invoke.message.payload()[arg_name].clone()).unwrap()
+    fn from_invoke(arg_name: &str, invoke: &Invoke<R>) -> Result<Self, tauri::InvokeError> {
+        serde_json::from_value(invoke.message.payload()[arg_name].clone())
+            .map_err(|err| tauri::InvokeError::from_anyhow(err.into()))
     }
 }
 

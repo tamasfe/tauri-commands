@@ -22,6 +22,9 @@ message: string;
  * 
  */
 export function hello(request: HelloRequest,): Promise<HelloReply> {return invoke('hello', {_1: request,});}
+/**
+ * adds numbers
+ */
 export function addNumbers(_1: number,_2: number,): Promise<number> {return invoke('add numbers', {_1: _1,_2: _2,});}
 /**
  *  Commands defined as functions have to be generic over the runtime.

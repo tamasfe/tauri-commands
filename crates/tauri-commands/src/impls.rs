@@ -14,10 +14,10 @@ macro_rules! impl_invoke_args {
         $(
             impl<R, $($arg,)*> InvokeArgs<R> for ($($arg,)*) where R: Runtime, $($arg: FromInvoke<R>),* {
                 #[allow(unused_variables, clippy::unused_unit)]
-                fn invoke_args(invoke: &Invoke<R>) -> Self {
-                    ($(
-                        $arg::from_invoke(stringify!($arg), invoke),
-                    )*)
+                fn invoke_args(invoke: &Invoke<R>) -> Result<Self, tauri::InvokeError> {
+                    Ok(($(
+                        $arg::from_invoke(stringify!($arg), invoke)?,
+                    )*))
                 }
 
                 #[cfg(feature = "codegen")]
@@ -81,19 +81,19 @@ impl_fn_handler! {
 }
 
 impl<R: Runtime> FromInvoke<R> for TauriWindow<R> {
-    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Self {
-        TauriWindow(invoke.message.window())
+    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Result<Self, tauri::InvokeError> {
+        Ok(TauriWindow(invoke.message.window()))
     }
 }
 
 impl<R: Runtime> FromInvoke<R> for TauriStateManager {
-    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Self {
-        TauriStateManager(invoke.message.state())
+    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Result<Self, tauri::InvokeError> {
+        Ok(TauriStateManager(invoke.message.state()))
     }
 }
 
 impl<R: Runtime, T: Send + Sync + Clone + 'static> FromInvoke<R> for TauriState<T> {
-    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Self {
-        TauriState((*invoke.message.state().get::<T>()).clone())
+    fn from_invoke(_arg_name: &str, invoke: &Invoke<R>) -> Result<Self, tauri::InvokeError> {
+        Ok(TauriState((*invoke.message.state().get::<T>()).clone()))
     }
 }

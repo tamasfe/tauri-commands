@@ -1,4 +1,5 @@
 use std::{borrow::Cow, collections::HashMap, sync::Arc};
+use anyhow::anyhow;
 use tauri::{Invoke, InvokeResolver, Runtime};
 
 mod impls;
@@ -6,7 +7,6 @@ mod impls;
 #[cfg(feature = "codegen")]
 pub mod codegen;
 
-pub use anyhow;
 pub use tauri_commands_macros::command;
 
 pub type CommandResult<T> = Result<T, anyhow::Error>;
@@ -76,16 +76,14 @@ where
     }
 }
 
-
-
 pub struct Command<R: Runtime> {
     handler: Box<dyn Fn(Invoke<R>) + Send + Sync>,
     #[cfg(feature = "codegen")]
     pub meta: codegen::CommandMeta,
 }
 
-pub trait InvokeArgs<R: Runtime> {
-    fn invoke_args(invoke: &Invoke<R>) -> Self;
+pub trait InvokeArgs<R: Runtime>: Sized {
+    fn invoke_args(invoke: &Invoke<R>) -> Result<Self, tauri::InvokeError>;
 
     #[cfg(feature = "codegen")]
     #[doc(hidden)]
@@ -94,8 +92,8 @@ pub trait InvokeArgs<R: Runtime> {
     }
 }
 
-trait FromInvoke<R: Runtime> {
-    fn from_invoke(arg_name: &str, invoke: &Invoke<R>) -> Self;
+trait FromInvoke<R: Runtime>: Sized {
+    fn from_invoke(arg_name: &str, invoke: &Invoke<R>) -> Result<Self, tauri::InvokeError>;
 
     #[cfg(feature = "codegen")]
     fn schema(_gen: &mut schemars::gen::SchemaGenerator) -> Option<schemars::schema::Schema> {
@@ -139,12 +137,16 @@ impl<R: Runtime> Commands<R> {
 
             match self.commands.get(cmd_name) {
                 Some(c) => (c.handler)(invoke),
-                None => panic!("no handler found for {cmd_name}"),
+                None => invoke
+                    .resolver
+                    .invoke_error(tauri::InvokeError::from_anyhow(anyhow!(
+                        "no handler found for {cmd_name}"
+                    ))),
             }
         }
     }
 
-    pub fn add_command(&mut self, command: impl IntoCommand) -> &mut Self {
+    pub fn command(&mut self, command: impl IntoCommand) -> &mut Self {
         let (name, cmd) = command.into_command(self);
         if self.commands.contains_key(&name) {
             panic!("command handler for command `{name}` already exists");
@@ -153,13 +155,19 @@ impl<R: Runtime> Commands<R> {
         self
     }
 
-    pub fn handle<Args, F>(&mut self, command_name: &str, handler: F) -> &mut Self
+    pub fn handler<Args, F>(&mut self, command_name: &str, description: &str, handler: F) -> &mut Self
     where
         Args: InvokeArgs<R>,
         F: CommandHandler<Args> + Send + Sync + 'static,
         F::Output: InvokeReply<R>,
     {
-        let cmd = self.create_command(handler);
+        let mut cmd = self.create_command(handler);
+
+        #[cfg(feature = "codegen")]
+        {
+            cmd.meta.docs = Cow::Owned(description.to_string());
+        }
+
         if self
             .commands
             .insert(Cow::Owned(command_name.to_string()), cmd)
@@ -178,14 +186,20 @@ impl<R: Runtime> Commands<R> {
         F: CommandHandler<Args> + Send + Sync + 'static,
         F::Output: InvokeReply<R>,
     {
+
+        let handler = Box::new(move |invoke| match Args::invoke_args(&invoke) {
+            Ok(args) => {
+                handler.handle(args).reply(invoke.resolver);
+            }
+            Err(err) => {
+                invoke.resolver.invoke_error(err);
+            }
+        });
+
         #[cfg(feature = "codegen")]
         {
             Command {
-                handler: Box::new(move |invoke| {
-                    handler
-                        .handle(Args::invoke_args(&invoke))
-                        .reply(invoke.resolver);
-                }),
+                handler,
                 meta: codegen::CommandMeta {
                     docs: "".into(),
                     args: Args::args(&mut self.schema_gen),
@@ -197,11 +211,7 @@ impl<R: Runtime> Commands<R> {
         #[cfg(not(feature = "codegen"))]
         {
             Command {
-                handler: Box::new(move |invoke| {
-                    handler
-                        .handle(Args::invoke_args(&invoke))
-                        .reply(invoke.resolver);
-                }),
+                handler,
             }
         }
     }
