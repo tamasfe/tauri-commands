@@ -20,7 +20,7 @@ where
 
 impl<R: Runtime, Fut, T> InvokeReply<R> for Fut
 where
-    Fut: Future<Output = Result<T, anyhow::Error>> + Send + Sync + 'static,
+    Fut: Future<Output = Result<T, anyhow::Error>> + Send  + 'static,
     T: Serialize + schemars::JsonSchema,
 {
     fn reply(self, resolver: InvokeResolver<R>) {

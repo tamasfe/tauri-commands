@@ -1,4 +1,4 @@
-use crate::{CommandHandler, FromInvoke, InvokeArgs, InvokeReply};
+use crate::{FromInvoke, InvokeReply};
 use serde::{de::DeserializeOwned, Serialize};
 use std::future::Future;
 use tauri::{Invoke, InvokeError, InvokeResolver, Runtime};
@@ -16,11 +16,10 @@ where
 
 impl<R: Runtime, Fut, T> InvokeReply<R> for Fut
 where
-    Fut: Future<Output = Result<T, anyhow::Error>> + Send + Sync + 'static,
+    Fut: Future<Output = Result<T, anyhow::Error>> + Send + 'static,
     T: Serialize,
 {
     fn reply(self, resolver: InvokeResolver<R>) {
         resolver.respond_async(async move { self.await.map_err(InvokeError::from_anyhow) })
     }
 }
-
